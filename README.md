@@ -4,7 +4,7 @@ Interaktive Velokarte auf der Ridian Karte von Ubique. Zeigt alle EuroVelo Route
 
 Herausgeber: VIANDAR GmbH, Reto Schubnell, reto@viandar-outdoor.ch, https://viandar-outdoor.ch
 
-Die Suche läuft über alle Angebote. Ein Ort wie Weinfelden zeigt alle Etappen, Services und Sperrungen im Umkreis von 3 km, ein Name wie Rhein alle Routen und Etappen mit diesem Namen.
+Die Rubrik Gravel zeigt die 19 Gravel-Touren aus der Auswahl «Die schönsten Gravel-Touren» von SchweizMobil. Die Suche läuft über alle Angebote. Ein Ort wie Weinfelden zeigt alle Etappen, Services und Sperrungen im Umkreis von 3 km, ein Name wie Rhein alle Routen und Etappen mit diesem Namen.
 
 ## Inhalt
 
@@ -16,6 +16,7 @@ Die Suche läuft über alle Angebote. Ein Ort wie Weinfelden zeigt alle Etappen,
 - **EuroVelo Routen:** Contains information from EuroVelo GPX tracks downloaded from www.EuroVelo.com on 24.11.2026, which is made available here under the Open Database License (ODbL). Die abgeleitete Datenbank in `eurovelo-etappen-odbl.json` und in `index.html` steht ebenfalls unter der ODbL. EuroVelo® ist eine eingetragene Marke der European Cyclists' Federation. Diese Karte ist kein offizielles Angebot von EuroVelo.
 - **Nationale EuroVelo Koordinationsstellen:** pro.eurovelo.com
 - **Veloland und Mountainbikeland:** © Stiftung SchweizMobil, Geometrie über geo.admin.ch (ASTRA, Kantone)
+- **Gravel-Touren:** Auswahl gemäss https://schweizmobil.ch/de/die-schonsten-gravel-touren
 - **Sperrungen:** geo.admin.ch, live geladen
 - **Karte:** Ridian von Ubique, Daten © OpenStreetMap contributors
 - **Veloläden im Umkreis:** © OpenStreetMap contributors, ODbL, live über Overpass

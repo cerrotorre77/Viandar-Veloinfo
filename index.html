@@ -26,10 +26,10 @@ header p{margin:6px 0 0;font-size:13px;color:#cfe5da}
 header .by{font-size:12px;margin-top:8px;color:#cfe5da}
 header .by a{color:#fff}
 #toggle{display:none}
-#tabs{display:flex;background:var(--deep2);overflow-x:auto}
-#tabs button{all:unset;cursor:pointer;flex:1 1 0;padding:8px 2px 7px;text-align:center;color:#cfe5da;border-bottom:3px solid transparent;min-width:50px}
+#tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--deep2)}
+#tabs button{all:unset;cursor:pointer;padding:7px 2px 6px;text-align:center;color:#cfe5da;border-bottom:3px solid transparent;min-width:0}
 #tabs button b{display:block;font-size:16px;color:#fff;font-variant-numeric:tabular-nums}
-#tabs button span{font-size:11px}
+#tabs button span{font-size:12px;white-space:nowrap}
 #tabs button[aria-pressed=true]{border-bottom-color:#fff;background:rgba(255,255,255,.08)}
 #tabs button:focus-visible{outline:3px solid #9fe0c0;outline-offset:-3px}
 .ctrl{padding:10px 20px;border-bottom:1px solid var(--line);display:grid;gap:8px}
@@ -169,6 +169,7 @@ ul.pos li{margin:6px 0!important}
   <button data-v="evr" aria-pressed="false"><b>0</b><span>EuroVelo</span></button>
   <button data-v="vl" aria-pressed="false"><b>0</b><span>Veloland</span></button>
   <button data-v="mb" aria-pressed="false"><b>0</b><span>Bikeland</span></button>
+  <button data-v="gr" aria-pressed="false"><b>0</b><span>Gravel</span></button>
   <button data-v="pos" aria-pressed="false"><b>0</b><span>Services</span></button>
   <button data-v="sp" aria-pressed="false"><b>0</b><span>Sperrungen</span></button>
  </nav>
@@ -192,6 +193,7 @@ ul.pos li{margin:6px 0!important}
   <button class="mode tg" data-l="ev" aria-pressed="true">EuroVelo</button>
   <button class="mode tg" data-l="vl" aria-pressed="true">Veloland</button>
   <button class="mode tg" data-l="mb" aria-pressed="true">Mountainbikeland</button>
+  <button class="mode tg" data-l="gr" aria-pressed="true">Gravel</button>
   <button class="mode tg" data-l="pos" aria-pressed="true">Services</button>
   <button class="mode tg" data-l="sp" aria-pressed="true">Sperrungen</button>
  </div>
@@ -242,6 +244,11 @@ const SM=RAW.SM.map(([land,rn,seg,title,cat,start,via,end,len,asc,dsc,fit,grd,as
 SM.sort((a,b)=>a.land.localeCompare(b.land)||a.rn-b.rn||a.seg-b.seg);SM.forEach((s,k)=>s.i=k);
 const POS=Object.entries(RAW.POS).map(([k,[t,title,org,street,zip,city,phone,url,urlt,abs,ll,approx]])=>({k,t,title,org,street,zip,city,phone,url,urlt,abs,la:ll?ll[0]:null,lo:ll?ll[1]:null,approx:!!approx})).filter(p=>p.la!=null);
 const PBY=new Map(POS.map(p=>[p.k,p]));
+// ===== Gravel-Touren gemäss SchweizMobil «Die schönsten Gravel-Touren» =====
+const GRC='#e0a526';
+const GR=[['v',65,0],['v',82,0],['v',908,0],['v',66,2],['v',113,0],['v',505,0],['v',979,0],['v',8,5],['v',5,6],['m',3,0],['m',22,0],['m',50,0],['m',48,0],['m',337,0],['m',410,0],['m',482,0],['m',955,0],['m',707,0],['m',970,0]].map(([land,rn,seg],i)=>{const st=SM.filter(s=>s.land===land&&s.rn===rn&&(!seg||s.seg===seg));if(!st.length)return null;st.forEach(s=>s.gravel=true);const sum=k=>st.reduce((a,s)=>a+(s[k]||0),0);return{i,land,rn,seg,st,title:st[0].title,name:st[0].title+(seg?' Etappe '+seg:''),len:sum('len'),asc:sum('asc'),dsc:sum('dsc'),asph:sum('asph'),unsf:sum('unsf'),single:sum('single'),abs:st[0].abs,url:`https://schweizmobil.ch/de/${LAND[land].path}/route-${rn}`+(seg?`/etappe-${seg}`:'')}}).filter(Boolean);
+const GRIDS=GR.flatMap(g=>g.st.map(s=>s.i));
+
 const POSC={c:'#2e7d32',v:'#7b1fa2'},POST={c:'Veloservice',v:'Velovermietung'};
 const OSMC={shop:'#37474f',rental:'#8e24aa',repair:'#00897b',charge:'#f57c00'},OSMT={shop:'Veloladen',rental:'Veloverleih',repair:'Reparaturstation',charge:'E-Bike Ladestation'};
 
@@ -270,6 +277,8 @@ const evColor=()=>mode==='dev'?['get','c']:['get','rc'];
 
 map.on('load',()=>{
  for(const [id,data] of [['vl',smFc('v')],['mb',smFc('m')],['ev',evFc(ST)],['pos',posFc()],['sp',EMPTY],['osm',EMPTY],['ov',EMPTY],['place',EMPTY]])map.addSource(id,{type:'geojson',data});
+ // Gravel Touren als breiter Schimmer unter den SchweizMobil Linien
+ for(const s of['mb','vl'])map.addLayer({id:'gr-'+s,type:'line',source:s,filter:['in',['get','i'],['literal',GRIDS]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':GRC,'line-width':W(5,11,16),'line-opacity':.5}});
  // Mountainbikeland und Veloland unter EuroVelo
  for(const [s,c] of [['mb',LAND.m.c],['vl',LAND.v.c]]){
   map.addLayer({id:s+'-case',type:'line',source:s,minzoom:6,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fff','line-width':W(2,5,8),'line-opacity':.8}});
@@ -315,7 +324,7 @@ $('devs').innerHTML=DEV.map((d,k)=>`<button class="chip" data-d="${k}" aria-pres
 // ===== Suche über alles: Text und Ort im Umkreis =====
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 const bbox=P=>{let a=180,b=90,c=-180,d=-90;for(const [x,y] of P){if(x<a)a=x;if(x>c)c=x;if(y<b)b=y;if(y>d)d=y}return[a,b,c,d]};
-ST.forEach(s=>{s.bb=bbox(s.path);s.keyN=norm(s.key)});SM.forEach(s=>{s.all=s.lines.flat();s.bb=bbox(s.all);s.keyN=norm(s.key+' '+LAND[s.land].t)});POS.forEach(p=>p.keyN=norm(p.title+' '+p.city+' '+p.zip+' '+(p.org||'')));
+ST.forEach(s=>{s.bb=bbox(s.path);s.keyN=norm(s.key)});SM.forEach(s=>{s.all=s.lines.flat();s.bb=bbox(s.all);s.keyN=norm(s.key+' '+LAND[s.land].t+(s.gravel?' gravel':''))});GR.forEach(g=>g.keyN=norm(g.name+' '+g.rn+' gravel '+LAND[g.land].t+' '+g.st.map(s=>s.start+' '+(s.via||'')+' '+s.end).join(' ')));POS.forEach(p=>p.keyN=norm(p.title+' '+p.city+' '+p.zip+' '+(p.org||'')));
 const R_NEAR=3,R_SP=5;
 let place=null;const near={ev:new Set(),sm:new Set(),pos:new Set(),sp:new Set()};const dist=new Map();
 function minDist(P,la,lo){let m=1e9;for(const p of P){const d=hav(la,lo,p[1],p[0]);if(d<m)m=d}return m}
@@ -330,13 +339,14 @@ function passSm(s,land){const t=tq(),c=$('cat').value,f=$('fit').value,g=$('grd'
 const byDist=(L,key)=>place?L.slice().sort((a,b)=>(dist.get(key(a))??1e9)-(dist.get(key(b))??1e9)):L;
 function listPos(){const t=tq(),k=$('posT').value;const L=POS.filter(p=>(!k||p.t===k)&&(!t||p.keyN.includes(t)||near.pos.has(p.k))).sort((a,b)=>a.city.localeCompare(b.city,'de')||a.title.localeCompare(b.title,'de'));return byDist(L,p=>'p'+p.k)}
 function listSp(){const t=tq();const L=SP.map((s,i)=>[s,i]).filter(([s,i])=>!t||norm(s.title+' '+s.abs).includes(t)||near.sp.has(i)).map(x=>x[0]);return byDist(L,s=>'x'+SP.indexOf(s))}
+const listGr=()=>{const t=tq();const L=GR.filter(g=>!t||g.keyN.includes(t)||g.st.some(s=>near.sm.has(s.i)));return place?L.slice().sort((a,b)=>Math.min(...a.st.map(s=>dist.get('s'+s.i)??1e9))-Math.min(...b.st.map(s=>dist.get('s'+s.i)??1e9))):L};
 const listSm=land=>byDist(SM.filter(s=>passSm(s,land)),s=>'s'+s.i);
 const listEv=()=>byDist(filtered,s=>'e'+s.i);
 const dTxt=k=>{const d=dist.get(k);if(d==null||!place)return'';return d<0.6?` · durch ${esc(place.name)}`:` · ${fmtD(d*1000)} von ${esc(place.name)}`};
 let filtered=ST;
 function apply(fit){
  filtered=ST.filter(passEv);
- if(mapReady){map.getSource('ev').setData(evFc(filtered));const act=view==='vl'||view==='mb'||!!tq();if(act){const ids=SM.filter(s=>passSm(s,s.land)).map(s=>s.i);const smf=['in',['get','i'],['literal',ids]];map.setFilter('vl-line',smf);map.setFilter('mb-line',smf)}else{map.setFilter('vl-line',null);map.setFilter('mb-line',null)}}
+ if(mapReady){map.getSource('ev').setData(evFc(filtered));const act=view==='vl'||view==='mb'||view==='gr'||!!tq();if(act){const ids=view==='gr'?listGr().flatMap(g=>g.st.map(s=>s.i)):SM.filter(s=>passSm(s,s.land)).map(s=>s.i);const smf=['in',['get','i'],['literal',ids]];map.setFilter('vl-line',smf);map.setFilter('mb-line',smf)}else{map.setFilter('vl-line',null);map.setFilter('mb-line',null)}}
  shown=150;renderList();counts();
  if(fit&&mapReady)fitView();
 }
@@ -347,14 +357,17 @@ function fitView(){if(view==='all'&&place){const dl=(R_NEAR+1)/111,dlo=(R_NEAR+1
  if(view==='all'){if(!tq())return;evs();sms('v');sms('m');listPos().forEach(p=>add([p.lo,p.la]))}
  else if(view==='ev'||view==='evr')evs();
  else if(view==='vl'||view==='mb')sms(view==='vl'?'v':'m');
+ else if(view==='gr')listGr().forEach(g=>g.st.forEach(s=>s.lines.forEach(l=>{add(l[0]);add(l[l.length-1])})));
  else if(view==='pos')listPos().forEach(p=>add([p.lo,p.la]));
  else listSp().forEach(s=>add(s.c));
  if(n)map.fitBounds(b,{padding:pad(),maxZoom:12,duration:600})}
-function counts(){const T=v=>document.querySelector(`#tabs button[data-v=${v}] b`);const s=!!tq();T('ev').textContent=num(filtered.length);T('evr').textContent=new Set(filtered.map(x=>x.ev)).size;T('vl').textContent=num(SM.filter(x=>passSm(x,'v')).length);T('mb').textContent=num(SM.filter(x=>passSm(x,'m')).length);T('pos').textContent=num(listPos().length);T('sp').textContent=SP.length?num(listSp().length):'…';
- T('all').textContent=s?num(filtered.length+SM.filter(x=>passSm(x,x.land)).length+listPos().length+(SP.length?listSp().length:0)):'·'}
+function counts(){const T=v=>document.querySelector(`#tabs button[data-v=${v}] b`);const s=!!tq();T('ev').textContent=num(filtered.length);T('evr').textContent=new Set(filtered.map(x=>x.ev)).size;T('vl').textContent=num(SM.filter(x=>passSm(x,'v')).length);T('mb').textContent=num(SM.filter(x=>passSm(x,'m')).length);T('pos').textContent=num(listPos().length);T('gr').textContent=num(listGr().length);T('sp').textContent=SP.length?num(listSp().length):'…';
+ T('all').textContent=s?num(filtered.length+SM.filter(x=>passSm(x,x.land)).length+listGr().length+listPos().length+(SP.length?listSp().length:0)):'·'}
 const devBar=r=>`<div class="bar" aria-hidden="true">${r.dev.map((v,k)=>v?`<i style="width:${(v/r.len*100).toFixed(2)}%;background:${DEV[k].c};${DEV[k].dash?'opacity:.6':''}"></i>`:'').join('')}</div>`;
 const liEv=s=>`<li><button data-ev="${s.i}" aria-current="${sel===s}"><span class="r">${esc(s.name)}</span><span class="g" style="background:${routeColor(s.ev)}">EV${s.ev}</span><span class="s"><span class="pdot" style="background:${DEV[s.dev].c}"></span>${esc(DEV[s.dev].t)} · ${km(s.len)}${s.up?` · ↑ ${num(s.up)} m`:''}${place?dTxt('e'+s.i):' · '+esc(s.cs.map(c=>CN[c]||c).join(', '))}</span></button></li>`;
 const liSm=s=>`<li><button data-sm="${s.i}" aria-current="${sel===s}"><span class="r">${esc(s.title)}${s.seg?` <span class="mu">Etappe ${s.seg}</span>`:''}</span><span class="g" style="background:${LAND[s.land].c}">${s.rn}</span><span class="s">${esc(s.start)} bis ${esc(s.end)} · ${s.len} km · ↑ ${num(s.asc||0)} m${s.fit?' · Kondition '+LVL[s.fit]:''}${s.grd?' · Technik '+LVL[s.grd]:''}${dTxt('s'+s.i)}</span></button></li>`;
+const grDist=g=>{if(!place)return'';const d=Math.min(...g.st.map(s=>dist.get('s'+s.i)??1e9));return d>1e8?'':d<0.6?` · durch ${esc(place.name)}`:` · ${fmtD(d*1000)} von ${esc(place.name)}`};
+const liGr=g=>`<li><button data-gr="${g.i}"><span class="r">${esc(g.name)}</span><span class="g" style="background:${LAND[g.land].c}">${g.rn}</span><span class="s"><span class="pdot" style="background:${GRC}"></span>${LAND[g.land].t} · ${g.st.length>1?g.st.length+' Etappen · ':''}${g.len} km · ↑ ${num(g.asc)} m${g.unsf||g.single?` · ${Math.round((g.unsf+g.single)/Math.max(1,g.asph+g.unsf+g.single)*100)} % Naturbelag`:''}${grDist(g)}</span></button></li>`;
 const liPos=p=>`<li><button data-pos="${esc(p.k)}"><span class="r">${esc(p.title)}</span><span class="g" style="background:${POSC[p.t]}">${p.t==='v'?'Miete':'Service'}</span><span class="s">${esc([p.street,p.zip+' '+p.city].filter(Boolean).join(', '))}${dTxt('p'+p.k)}</span></button></li>`;
 const liSp=s=>{const i=SP.indexOf(s);return`<li><button data-sp="${i}"><span class="r">${esc(s.title)}</span><span class="g" style="background:${s.land==='mtbland'?LAND.m.c:LAND.v.c}">${s.land==='mtbland'?'Bike':'Velo'}</span><span class="s">${esc(s.type)} · ${esc(s.dur||'')}${dTxt('x'+i)}</span></button></li>`};
 function renderList(){
@@ -362,11 +375,11 @@ function renderList(){
  const empty='<li class="empty">Keine Einträge für diese Auswahl. Filter lockern oder anderen Suchbegriff wählen.</li>';
  if(view==='all'){const t=q.value.trim();
   if(!t){cnt.textContent='Suche über alle Angebote';list.innerHTML='<li class="empty">Ort, Route oder Etappe eingeben, zum Beispiel Weinfelden, Basel, Rhein oder Alpine Bike. Die Suche findet EuroVelo, Veloland, Mountainbikeland, Veloservices und Sperrungen mit passendem Namen und im Umkreis von 3 km um den Ort.</li>';return}
-  const E=listEv(),V=listSm('v'),M=listSm('m'),P=listPos(),S=SP.length?listSp():[];
+  const E=listEv(),V=listSm('v'),M=listSm('m'),G=listGr(),P=listPos(),S=SP.length?listSp():[];
   cnt.textContent=place?`${esc(place.name)}${place.sub?', '+place.sub:''} · Angebote im Umkreis von ${R_NEAR} km und mit passendem Namen`:`Treffer für «${t}»`;
   const sec=(title,c,L,v,li)=>L.length?`<li class="hd"><span class="pdot" style="background:${c}"></span><span class="hdt">${title}</span><span class="mu">${num(L.length)}</span>${L.length>5?`<button class="lnk" data-tab="${v}">Alle anzeigen</button>`:''}</li>`+L.slice(0,5).map(li).join(''):'';
   const h=(place?`<li class="plc"><span><b>${esc(place.name)}</b> <span class="mu">${esc(place.sub||'')}</span></span><button class="lnk" id="plcZoom">Auf der Karte zeigen</button></li>`:'')+
-   sec('EuroVelo Etappen','#1a9850',E,'ev',liEv)+sec('Veloland','#0a6fc2',V,'vl',liSm)+sec('Mountainbikeland','#b0561a',M,'mb',liSm)+sec('Veloservice und Vermietung',POSC.c,P,'pos',liPos)+sec('Sperrungen und Umleitungen','#d10019',S,'sp',liSp);
+   sec('EuroVelo Etappen','#1a9850',E,'ev',liEv)+sec('Veloland','#0a6fc2',V,'vl',liSm)+sec('Mountainbikeland','#b0561a',M,'mb',liSm)+sec('Gravel-Touren',GRC,G,'gr',liGr)+sec('Veloservice und Vermietung',POSC.c,P,'pos',liPos)+sec('Sperrungen und Umleitungen','#d10019',S,'sp',liSp);
   list.innerHTML=h||(geoBusy?'<li class="empty">Ort wird gesucht.</li>':empty);return}
  if(view==='ev'){const L=listEv();const tot=L.reduce((a,s)=>a+s.len,0);cnt.textContent=`${num(L.length)} Etappen · ${num(Math.round(tot/1000))} km`;
   list.innerHTML=L.length?L.slice(0,shown).map(liEv).join('')+more(L.length):empty}
@@ -374,15 +387,17 @@ function renderList(){
   list.innerHTML=(L.length?L.map(r=>`<li><button data-evr="${r.n}"><span class="r">EuroVelo ${r.n} ${esc(r.t)}${r.de?` <span class="mu">${esc(r.de)}</span>`:''}</span><span class="g" style="background:${routeColor(r.n)}">${num(Math.round(r.len/1000))} km</span><span class="s">${r.stages.length} Etappen · ${esc(r.cs.map(c=>CN[c]||c).join(', '))}${devBar(r)}</span></button></li>`).join(''):empty)+`<li class="src">Quelle: <a href="https://en.eurovelo.com" target="_blank" rel="noopener">EuroVelo GPX Tracks</a>, heruntergeladen am ${DL}, Open Database License</li>`}
  else if(view==='vl'||view==='mb'){const land=view==='vl'?'v':'m';const L=listSm(land);cnt.textContent=`${L.length} Etappen ${LAND[land].t} · ${num(L.reduce((a,s)=>a+(s.len||0),0))} km`;
   list.innerHTML=(L.length?L.slice(0,shown).map(liSm).join('')+more(L.length):empty)+`<li class="src">Quelle: <a href="https://schweizmobil.ch/de/${LAND[land].path}" target="_blank" rel="noopener">${LAND[land].t} Schweiz, Stiftung SchweizMobil</a></li>`}
+ else if(view==='gr'){const L=listGr();cnt.textContent=`${L.length} Gravel-Touren · ${num(L.reduce((a,g)=>a+g.len,0))} km`;
+  list.innerHTML=(L.length?L.map(liGr).join(''):empty)+`<li class="src">Auswahl: <a href="https://schweizmobil.ch/de/die-schonsten-gravel-touren" target="_blank" rel="noopener">Die schönsten Gravel-Touren, SchweizMobil</a></li>`}
  else if(view==='pos'){const L=listPos();cnt.textContent=`${L.length} Veloservices und Vermietungen an SchweizMobil Routen`;
   list.innerHTML=L.length?L.slice(0,shown).map(liPos).join('')+more(L.length):empty}
  else{const L=listSp();cnt.textContent=SP.length?`${L.length} aktuelle Sperrungen und Umleitungen in der Schweiz`:'Sperrungen werden geladen';
   list.innerHTML=L.length?L.slice(0,shown).map(liSp).join('')+more(L.length):(SP.length?empty:'')}
 }
 list.addEventListener('click',e=>{if(e.target.closest('#more')){shown+=150;renderList();return}if(e.target.closest('#plcZoom')){if(place&&mapReady)map.flyTo({center:[place.lo,place.la],zoom:12,padding:pad(),duration:800});return}const tb=e.target.closest('[data-tab]');if(tb){setView(tb.dataset.tab);apply(true);return}const b=e.target.closest('button');if(!b)return;const d=b.dataset;
- if(d.ev)showEv(ST[+d.ev],true);else if(d.evr)showRoute(RBY.get(+d.evr),true);else if(d.sm)showSm(SM[+d.sm],true);else if(d.pos)showPos(PBY.get(d.pos),true);else if(d.sp)showSp(SP[+d.sp],true)});
-function setView(v){view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));const ev=v==='ev'||v==='evr',sm=v==='vl'||v==='mb';$('evCtl').hidden=!ev;$('devCtl').hidden=!ev;$('cWrap').hidden=!ev;$('catWrap').hidden=!sm;$('smCtl').hidden=!sm;$('grdWrap').hidden=v!=='mb';$('posWrap').hidden=v!=='pos';if(v!=='mb')$('grd').value='';$('q').closest('.row').style.gridTemplateColumns=(v==='all'||v==='sp')?'1fr':'';
- const need={ev:'ev',evr:'ev',vl:'vl',mb:'mb',pos:'pos',sp:'sp'}[v];const b=need&&$('lyr-'+need);if(b&&b.getAttribute('aria-pressed')==='false')b.click();applyLayers()}
+ if(d.gr)showGr(GR[+d.gr],true);else if(d.ev)showEv(ST[+d.ev],true);else if(d.evr)showRoute(RBY.get(+d.evr),true);else if(d.sm)showSm(SM[+d.sm],true);else if(d.pos)showPos(PBY.get(d.pos),true);else if(d.sp)showSp(SP[+d.sp],true)});
+function setView(v){view=v;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));const ev=v==='ev'||v==='evr',sm=v==='vl'||v==='mb';$('evCtl').hidden=!ev;$('devCtl').hidden=!ev;$('cWrap').hidden=!ev;$('catWrap').hidden=!sm;$('smCtl').hidden=!sm;$('grdWrap').hidden=v!=='mb';$('posWrap').hidden=v!=='pos';if(v!=='mb')$('grd').value='';$('q').closest('.row').style.gridTemplateColumns=(v==='all'||v==='sp'||v==='gr')?'1fr':'';
+ const need={ev:'ev',evr:'ev',vl:'vl',mb:'mb',gr:'gr',pos:'pos',sp:'sp'}[v];const b=need&&$('lyr-'+need);if(b&&b.getAttribute('aria-pressed')==='false')b.click();applyLayers()}
 document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{if($('detail').classList.contains('on'))closeDetail();setView(b.dataset.v);apply(true)}));
 // Ortssuche: Photon (OpenStreetMap) für Europa, geo.admin.ch als Ersatz für die Schweiz
 const gcache=new Map();let geoBusy=false;
@@ -402,7 +417,7 @@ for(const el of[selL,$('fit'),$('grd')])el.addEventListener('change',()=>apply(f
 $('devs').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;const k=+b.dataset.d;devOn.has(k)?devOn.delete(k):devOn.add(k);b.setAttribute('aria-pressed',devOn.has(k));apply(false)});
 
 // ===== Ebenen und Legende =====
-const LYR={ev:['ev-sel','ev-case','ev-line','ev-dash','ev-dot','ev-hit'],vl:['vl-case','vl-line','vl-hit','vl-sel'],mb:['mb-case','mb-line','mb-hit','mb-sel'],pos:['pos-pt','pos-lab'],sp:['sp-line','sp-pt','sp-hit']};
+const LYR={gr:['gr-mb','gr-vl'],ev:['ev-sel','ev-case','ev-line','ev-dash','ev-dot','ev-hit'],vl:['vl-case','vl-line','vl-hit','vl-sel'],mb:['mb-case','mb-line','mb-hit','mb-sel'],pos:['pos-pt','pos-lab'],sp:['sp-line','sp-pt','sp-hit']};
 document.querySelectorAll('.mode[data-l]').forEach(b=>{b.id='lyr-'+b.dataset.l;b.addEventListener('click',()=>{const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',on);applyLayers()})});
 document.querySelectorAll('.mode[data-m]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.m;document.querySelectorAll('.mode[data-m]').forEach(x=>x.setAttribute('aria-pressed',x===b));if(mapReady)for(const l of['ev-line','ev-dash','ev-dot'])map.setPaintProperty(l,'line-color',evColor());legend()}));
 function applyLayers(){if(!mapReady)return;for(const [k,ls] of Object.entries(LYR)){const on=$('lyr-'+k).getAttribute('aria-pressed')==='true';ls.forEach(l=>map.setLayoutProperty(l,'visibility',on?'visible':'none'))}
@@ -412,13 +427,13 @@ const swd=c=>`<svg width="26" height="12" aria-hidden="true"><circle cx="13" cy=
 function legend(){let h='';
  if(mode==='dev'){$('lgT').textContent='Ausbaustand EuroVelo';h+=DEV.map((d,k)=>`<div>${sw(d.c,k===3||k===4?'6 5':k===5?'1 6':'')}${esc(d.t)}</div>`).join('')}
  else{$('lgT').textContent='EuroVelo Routen';h+=ROUTES.map(r=>`<div>${sw(routeColor(r.n))}EV${r.n} ${esc(r.t)}</div>`).join('')}
- h+=`<div class="sep">${sw(LAND.v.c)}Veloland Schweiz</div><div>${sw(LAND.m.c)}Mountainbikeland Schweiz</div><div>${sw('#d10019','4 4')}Sperrung oder Umleitung</div><div>${swd(POSC.c)}Veloservice</div><div>${swd(POSC.v)}Velovermietung</div>`;
+ h+=`<div class="sep">${sw(LAND.v.c)}Veloland Schweiz</div><div>${sw(LAND.m.c)}Mountainbikeland Schweiz</div><div><svg width="26" height="12" aria-hidden="true"><line x1="3" y1="6" x2="23" y2="6" stroke="${GRC}" stroke-opacity=".55" stroke-width="10" stroke-linecap="round"/></svg>Gravel-Tour</div><div>${sw('#d10019','4 4')}Sperrung oder Umleitung</div><div>${swd(POSC.c)}Veloservice</div><div>${swd(POSC.v)}Velovermietung</div>`;
  $('lg').innerHTML=h}
 
 // ===== Detailansichten =====
 let listScroll=0;
 function openDetail(html){const d=$('detail'),sd=$('side');if(!sd.classList.contains('det'))listScroll=list.scrollTop;sd.classList.add('det');if(sd.classList.contains('min')){sd.classList.remove('min');$('toggle').setAttribute('aria-expanded',true);setTimeout(()=>map.resize(),50)}d.innerHTML='<div class="backbar"><button type="button" class="back">‹ Zurück zur Liste</button></div>'+html;d.classList.add('on');d.scrollTop=0;d.querySelector('.back').onclick=closeDetail;d.querySelector('.back').focus({preventScroll:true});
- d.querySelectorAll('[data-go-ev]').forEach(b=>b.onclick=()=>showEv(ST[+b.dataset.goEv],true));d.querySelectorAll('[data-go-sm]').forEach(b=>b.onclick=()=>showSm(SM[+b.dataset.goSm],true));d.querySelectorAll('[data-go-sp]').forEach(b=>b.onclick=()=>showSp(SP[+b.dataset.goSp],true));d.querySelectorAll('[data-go-pos]').forEach(b=>b.onclick=()=>showPos(PBY.get(b.dataset.goPos),true));d.querySelectorAll('[data-go-r]').forEach(b=>b.onclick=()=>showRoute(RBY.get(+b.dataset.goR),true));d.querySelectorAll('[data-necc]').forEach(b=>b.onclick=()=>showNecc(b.dataset.necc))}
+ d.querySelectorAll('[data-go-ev]').forEach(b=>b.onclick=()=>showEv(ST[+b.dataset.goEv],true));d.querySelectorAll('[data-go-sm]').forEach(b=>b.onclick=()=>showSm(SM[+b.dataset.goSm],true));d.querySelectorAll('[data-go-sp]').forEach(b=>b.onclick=()=>showSp(SP[+b.dataset.goSp],true));d.querySelectorAll('[data-go-pos]').forEach(b=>b.onclick=()=>showPos(PBY.get(b.dataset.goPos),true));d.querySelectorAll('[data-go-r]').forEach(b=>b.onclick=()=>showRoute(RBY.get(+b.dataset.goR),true));d.querySelectorAll('[data-go-gr]').forEach(b=>b.onclick=()=>showGr(GR[+b.dataset.goGr],true));d.querySelectorAll('[data-necc]').forEach(b=>b.onclick=()=>showNecc(b.dataset.necc))}
 function clearSel(){if(!mapReady)return;map.setFilter('ev-sel',['==',['get','i'],-1]);map.setFilter('vl-sel',['==',['get','i'],-1]);map.setFilter('mb-sel',['==',['get','i'],-1]);map.getSource('osm').setData(EMPTY);map.getSource('ov').setData(EMPTY)}
 function closeDetail(){$('detail').classList.remove('on');$('side').classList.remove('det');sel=null;ovToken++;wxToken++;osmToken++;clearSel();renderList();list.scrollTop=listScroll}
 function pad(){const c=map.getContainer(),Wd=c.clientWidth,H=c.clientHeight;const wide=Wd>820;const p={top:60,bottom:40,left:wide?270:40,right:wide?60:40};const sx=Math.min(1,(Wd*0.8)/(p.left+p.right)),sy=Math.min(1,(H*0.8)/(p.top+p.bottom));for(const k of['left','right'])p[k]*=sx;for(const k of['top','bottom'])p[k]*=sy;return p}
@@ -466,7 +481,7 @@ function showSm(s,fly){sel=s;const L=LAND[s.land];const all=s.lines.flat();
  const surf=(s.asph||s.unsf||s.single)?`<div class="bar" aria-hidden="true">${[[s.asph,'#607d8b'],[s.unsf,'#c9a26b'],[s.single,'#6d4c41']].map(([v,c])=>v?`<i style="width:${(v/((s.asph||0)+(s.unsf||0)+(s.single||0))*100).toFixed(1)}%;background:${c}"></i>`:'').join('')}</div><p class="mu small">${[s.asph?`Asphalt ${s.asph} km`:'',s.unsf?`Naturbelag ${s.unsf} km`:'',s.single?`Singletrail ${s.single} km`:''].filter(Boolean).join(' · ')}</p>`:'';
  const h=top(L.c,L.t+' · SchweizMobil',L.c,esc(s.title)+(s.seg?` <span style="font-weight:400">Etappe ${s.seg}</span>`:''),`Route ${s.rn} · ${esc(s.start)}${s.via?' via '+esc(s.via):''} bis ${esc(s.end)}`)+
  `<div class="blk info">${s.logo?`<img src="${esc(s.logo)}" alt="Routensignet ${s.rn}" width="64" height="64" onerror="this.remove()">`:''}${dl([['Länge',s.len+' km'],['Höhenmeter',`↑ ${num(s.asc||0)} m · ↓ ${num(s.dsc||0)} m`],s.fit?['Kondition',LVL[s.fit]]:null,s.grd?['Technik',LVL[s.grd]]:null,['Kategorie',CAT[s.cat]||s.cat],s.stages?['Etappen der Route',s.stages]:null])}</div>`+
- (surf?`<div class="blk"><h3>Belag</h3>${surf}</div>`:'')+
+ (s.gravel?`<div class="blk"><div class="badge" style="background:#8a5a0b">Gravel-Tour</div><ul class="plain">${GR.filter(g=>g.st.includes(s)).map(g=>`<li><button data-go-gr="${g.i}">Teil der Auswahl «${esc(g.name)}» ›</button></li>`).join('')}</ul></div>`:'')+(surf?`<div class="blk"><h3>Belag</h3>${surf}</div>`:'')+
  (s.abs?`<div class="blk"><p class="txt">${esc(s.abs)}</p></div>`:'')+
  spBlock(all)+wxBlock()+ovBlock(all,rideMin(s.len,s.asc||0,s.land))+posBlock(all,[...s.cs.map(x=>'c'+x),...s.vr.map(x=>'v'+x)])+
  `<div class="act"><a class="btn p" href="${esc(s.url)}" target="_blank" rel="noopener">Bei SchweizMobil öffnen</a><button class="btn" id="zoomTo">Hinzoomen</button></div><div class="blk"><p class="mu small">Routen und Angaben © Stiftung SchweizMobil, Geometrie über geo.admin.ch (ASTRA, Kantone).</p></div>`;
@@ -476,6 +491,14 @@ function showSm(s,fly){sel=s;const L=LAND[s.land];const all=s.lines.flat();
  const ends=smEnds(s.lines);afterOpen(all,ends,['Start '+s.start,'Ziel '+s.end],rideMin(s.len,s.asc||0,s.land),s.title+(s.seg?' Etappe '+s.seg:''))}
 function smEnds(lines){let best=null;const ends=lines.flatMap(l=>[l[0],l[l.length-1]]);for(const a of ends)for(const b of ends){const d=hav(a[1],a[0],b[1],b[0]);if(!best||d>best[0])best=[d,a,b]}const [a,b]=[best[1],best[2]];return[{t:'Start',la:a[1],lo:a[0]},{t:'Ziel',la:b[1],lo:b[0]}]}
 
+function showGr(g,fly){sel=null;const all=g.st.flatMap(s=>s.all);const tot=(g.asph||0)+(g.unsf||0)+(g.single||0);
+ const surf=tot?`<div class="bar" aria-hidden="true">${[[g.asph,'#607d8b'],[g.unsf,'#c9a26b'],[g.single,'#6d4c41']].map(([v,c])=>v?`<i style="width:${(v/tot*100).toFixed(1)}%;background:${c}"></i>`:'').join('')}</div><p class="mu small">${[g.asph?`Asphalt ${g.asph} km`:'',g.unsf?`Naturbelag ${g.unsf} km`:'',g.single?`Singletrail ${g.single} km`:''].filter(Boolean).join(' · ')}</p>`:'';
+ const h=top('#8a5a0b','Gravel · SchweizMobil','#8a5a0b',esc(g.name),`${LAND[g.land].t} Route ${g.rn}`)+
+ `<div class="blk">${dl([['Länge',g.len+' km'],['Höhenmeter',`↑ ${num(g.asc)} m · ↓ ${num(g.dsc)} m`],g.st.length>1?['Etappen',g.st.length]:null,g.st[0].fit?['Kondition',[...new Set(g.st.map(s=>LVL[s.fit]).filter(Boolean))].join(' bis ')]:null,g.land==='m'&&g.st[0].grd?['Technik',[...new Set(g.st.map(s=>LVL[s.grd]).filter(Boolean))].join(' bis ')]:null])}</div>`+
+ (surf?`<div class="blk"><h3>Belag</h3>${surf}</div>`:'')+(g.abs?`<div class="blk"><p class="txt">${esc(g.abs)}</p></div>`:'')+
+ `<div class="blk"><h3>${g.st.length>1?'Etappen':'Etappe'} mit Wetter, ÖV und Services</h3><ul class="plain">${g.st.map(s=>`<li><button data-go-sm="${s.i}"><span class="pdot" style="background:${LAND[s.land].c}"></span>${esc(s.name)} <span class="mu">${esc(s.start)} bis ${esc(s.end)}, ${s.len} km</span></button></li>`).join('')}</ul></div>`+
+ spBlock(all)+`<div class="act"><a class="btn p" href="${esc(g.url)}" target="_blank" rel="noopener">Bei SchweizMobil öffnen</a><a class="btn" href="https://schweizmobil.ch/de/die-schonsten-gravel-touren" target="_blank" rel="noopener">Alle Gravel-Touren</a></div><div class="blk"><p class="mu small">Auswahl der Gravel-Touren gemäss SchweizMobil. Routen und Angaben © Stiftung SchweizMobil.</p></div>`;
+ openDetail(h);if(mapReady){clearSel();const ids=g.st.map(s=>s.i);map.setFilter(g.land==='v'?'vl-sel':'mb-sel',['in',['get','i'],['literal',ids]])}if(fly)zoomTo(all,13)}
 function showPos(p,fly){if(!p)return;sel=null;const h=top(POSC[p.t],'SchweizMobil','#333',esc(p.title),POST[p.t]+(p.org?' · '+esc(p.org):''))+`<div class="blk">${dl([['Adresse',esc([p.street,p.zip+' '+p.city].filter(Boolean).join(', '))],p.phone?['Telefon',`<a href="tel:${esc(p.phone.replace(/[^\d+]/g,''))}">${esc(p.phone)}</a>`]:null,p.url?['Webseite',`<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.urlt||p.url.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,40))}</a>`]:null])}${p.abs?`<p class="txt">${esc(p.abs)}</p>`:''}${p.approx?'<p class="mu small">Lage nur auf die Ortschaft genau.</p>':''}</div>`+
  `<div class="blk"><h3>An diesen Routen</h3><ul class="plain">${SM.filter(s=>(p.t==='c'?s.cs:s.vr).includes(+p.k.slice(1))).map(s=>`<li><button data-go-sm="${s.i}"><span class="pdot" style="background:${LAND[s.land].c}"></span>${esc(s.name)}</button></li>`).join('')}</ul></div>`+wxBlock()+ovBlock([[p.lo,p.la]])+(p.url?`<div class="act"><a class="btn p" href="${esc(p.url)}" target="_blank" rel="noopener">Zur Webseite</a></div>`:'');
  openDetail(h);clearSel();if(fly&&mapReady)map.flyTo({center:[p.lo,p.la],zoom:14,padding:pad(),duration:800});loadWx(p.la,p.lo);if($('ovBox'))loadOv([{t:'Standort',la:p.la,lo:p.lo}])}
@@ -489,6 +512,7 @@ function showImpressum(){sel=null;const S=[['Herausgeber','VIANDAR GmbH, Reto Sc
  ['Karte','<a href="https://ridian.pro" target="_blank" rel="noopener">Ridian</a> von <a href="https://ubique.ch" target="_blank" rel="noopener">Ubique</a>, Stil <a href="https://github.com/UbiqueInnovation/ridian-mapstyles" target="_blank" rel="noopener">ridian-mapstyles</a>, Daten © OpenStreetMap contributors'],
  ['EuroVelo Routen',`Contains information from EuroVelo GPX tracks downloaded from <a href="https://www.eurovelo.com" target="_blank" rel="noopener">www.EuroVelo.com</a> on ${DL}, which is made available here under the <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">Open Database License (ODbL)</a>. Für die Karte wurden die Linien vereinfacht (Toleranz 40 m). Die abgeleitete Datenbank steht ebenfalls unter ODbL und ist in dieser Seite enthalten.`],
  ['EuroVelo Hinweise','<a href="https://pro.eurovelo.com/download/document/EuroVelo%20GPX%20tracks_License%20and%20disclaimer_20251211.pdf" target="_blank" rel="noopener">License and disclaimer</a> · <a href="https://pro.eurovelo.com/download/document/EuroVelo%20GPX%20tracks_How%20to%20use_20251211.pdf" target="_blank" rel="noopener">How to use</a> · Koordinationsstellen gemäss <a href="https://pro.eurovelo.com/organisation/national-coordinators" target="_blank" rel="noopener">EuroVelo for Professionals</a>. EuroVelo® ist eine eingetragene Marke der European Cyclists\' Federation (ECF). Diese Karte ist kein offizielles Angebot von EuroVelo.'],
+ ['Gravel-Touren','Auswahl gemäss <a href="https://schweizmobil.ch/de/die-schonsten-gravel-touren" target="_blank" rel="noopener">Die schönsten Gravel-Touren</a>, SchweizMobil'],
  ['Veloland und Mountainbikeland','<a href="https://schweizmobil.ch" target="_blank" rel="noopener">© Stiftung SchweizMobil</a>, Geometrie über <a href="https://api3.geo.admin.ch" target="_blank" rel="noopener">geo.admin.ch</a> (ASTRA, Kantone)'],
  ['Sperrungen','geo.admin.ch, live (ASTRA, SchweizMobil, Kantone)'],
  ['Veloservices und Vermietung','SchweizMobil, Lage über die Adresssuche von geo.admin.ch bestimmt'],
