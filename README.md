@@ -1,8 +1,10 @@
 # Velokarte Europa · VIANDAR
 
-Interaktive Velokarte auf der Ridian Karte von Ubique. Zeigt alle EuroVelo Routen mit Ausbaustand sowie Veloland und Mountainbikeland von SchweizMobil. Zu jeder Etappe gibt es Wetter, Veloservices, Vermietungen und aktuelle Sperrungen. In der Schweiz zeigt die Karte zusätzlich Haltestellen, Abfahrten und Verbindungen zurück zum Start mit Angaben zur Velomitnahme.
+Interaktive Velokarte auf der Ridian Karte von Ubique. Zeigt alle EuroVelo Routen mit Ausbaustand sowie Veloland und Mountainbikeland von SchweizMobil. Zu jeder Etappe gibt es Wetter, Veloservices, Vermietungen und aktuelle Sperrungen. In der Schweiz plant die Karte zusätzlich die Reise mit dem ÖV: Ausgangs- und Zielbahnhof eingeben, dann zeigt sie Hinreise, Zeitplan der Etappe und Rückreise mit Angaben zur Velomitnahme.
 
 Herausgeber: VIANDAR GmbH, Reto Schubnell, reto@viandar-outdoor.ch, https://viandar-outdoor.ch
+
+Die Suche läuft über alle Angebote. Ein Ort wie Weinfelden zeigt alle Etappen, Services und Sperrungen im Umkreis von 3 km, ein Name wie Rhein alle Routen und Etappen mit diesem Namen.
 
 ## Inhalt
 
@@ -18,6 +20,7 @@ Herausgeber: VIANDAR GmbH, Reto Schubnell, reto@viandar-outdoor.ch, https://vian
 - **Karte:** Ridian von Ubique, Daten © OpenStreetMap contributors
 - **Veloläden im Umkreis:** © OpenStreetMap contributors, ODbL, live über Overpass
 - **ÖV Schweiz:** Haltestellen und Abfahrten von transport.opendata.ch, Verbindungen und Velomitnahme vom search.ch Fahrplan
+- **Ortssuche:** Photon von komoot (© OpenStreetMap contributors), in der Schweiz ersatzweise geo.admin.ch
 - **Wetter:** Open-Meteo, in der Schweiz Modell ICON-CH2 von MeteoSchweiz
 
 Alle Angaben ohne Gewähr. Die Karte ist eine Planungshilfe. Massgebend sind Verkehrsregeln und Signalisation vor Ort.
